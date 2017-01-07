@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+/*******************************************************************************
+* Copyright (c) 2014-2015 IBM Corp.
+*
+* All rights reserved. This program and the accompanying materials
+* are made available under the terms of the Eclipse Public License v1.0
+* and Eclipse Distribution License v1.0 which accompany this distribution.
+*
+* The Eclipse Public License is available at
+*   http://www.eclipse.org/legal/epl-v10.html
+* and the Eclipse Distribution License is available at
+*   http://www.eclipse.org/org/documents/edl-v10.php.
+*
+* Contributors:
+*    Mike Robertson - initial contribution
+*******************************************************************************/
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:tools="http://schemas.android.com/tools"
+              style="@style/ActivityBackground"
+              android:orientation="vertical"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              tools:context="com.ibm.iot.android.iotstarter.fragments.IoTPagerFragment"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="top">
+        <TextView
+                style="@style/MyActionBarTitleText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/device_id_iot"
+                android:id="@+id/deviceIDSettingIoT"
+                />
+        <View android:layout_width="0dp"
+              android:layout_height="match_parent"
+              android:layout_weight="1" />
+        <TextView
+                style="@style/MyActionBarTitleText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/device_id_iot_value"
+                android:id="@+id/deviceIDIoT"
+                />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="top">
+
+        <TextView
+            style="@style/MyActionBarTitleText"
+            android:text="Direction:"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <View
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_width="0dp" />
+
+        <TextView
+            style="@style/MyActionBarTitleText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/textView"
+            />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="top">
+        <com.ibm.iot.android.iotstarter.views.DrawingView
+            android:layout_height="wrap_content"
+            android:layout_width="wrap_content"
+            android:id="@+id/drawing">
+        </com.ibm.iot.android.iotstarter.views.DrawingView>
+    </LinearLayout>
+</LinearLayout>
