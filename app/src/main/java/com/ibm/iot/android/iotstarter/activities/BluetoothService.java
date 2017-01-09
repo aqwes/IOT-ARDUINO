@@ -5,7 +5,10 @@ import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
@@ -28,7 +31,7 @@ public class BluetoothService extends Service {
     private BluetoothAdapter mBluetoothAdapter;
     private BluetoothDevice mDevice;
 
-    private static Timer timer = new Timer();
+    private static Timer timer;
 
     private ConnectThread mConnectThread;
     private Handler bluetoothIn;
@@ -40,9 +43,22 @@ public class BluetoothService extends Service {
         super.onCreate();
         recDataString = new StringBuilder();
         intent = new Intent("BluetoothService");
+        getApplicationContext().registerReceiver(mMessageReceiver, new IntentFilter("QuitService"));
+        timer = new Timer();
         init();
 
     }
+
+    public BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
+        @Override
+        public synchronized void onReceive(Context context, Intent intent) {
+            String data = intent.getStringExtra("quitMessage");
+            if(data.contains("quit")){
+                stopSelf();
+                timer.cancel();
+            }
+        }
+    };
 
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     private void init() {
@@ -56,32 +72,26 @@ public class BluetoothService extends Service {
                 }
             }
 
-
                 mConnectThread = new ConnectThread(mDevice);
                 mConnectThread.start();
-
-
                 //connect();
-
         }
         startService();
-
         }
 
-    private void startService()
-    {
+    private void startService() {
         timer.scheduleAtFixedRate(new mainTask(), 0, 2000);
     }
 
-    private class mainTask extends TimerTask
-    {
+    private class mainTask extends TimerTask {
         private int i = 0;
         public void run()
         {
-            i++;
+
             sendMessageToActivity("{ \"d\": {" +
                     "\"movement\":\"" + String.valueOf(i + "\" " +
                     "} }"));
+            i++;
         }
     }
 

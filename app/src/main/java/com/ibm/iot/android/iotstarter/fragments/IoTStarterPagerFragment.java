@@ -39,9 +39,11 @@ import com.ibm.iot.android.iotstarter.activities.WebActivity;
  */
 public class IoTStarterPagerFragment extends Fragment {
     private final static String TAG = IoTStarterPagerFragment.class.getName();
-    Context context;
+
     IoTStarterApplication app;
     BroadcastReceiver broadcastReceiver;
+    Context context;
+
 
     @Override
     public void onCreate(Bundle savedInstanceState) {

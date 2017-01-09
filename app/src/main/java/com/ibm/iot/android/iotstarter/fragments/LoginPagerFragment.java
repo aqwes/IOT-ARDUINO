@@ -53,6 +53,7 @@ import java.util.Date;
  */
 public class LoginPagerFragment extends IoTStarterPagerFragment {
     private final static String TAG = LoginPagerFragment.class.getName();
+    private Intent intentBluetooth;
 
     /**************************************************************************
      * Fragment functions for establishing the fragment
@@ -294,7 +295,7 @@ public class LoginPagerFragment extends IoTStarterPagerFragment {
                 activateButton.setEnabled(true);
             }
         } else if (buttonTitle.equals(getResources().getString(R.string.deactivate_button)) && app.isConnected()) {
-            // create ActionListener to handle message published results
+           quitMessageToActivity("quit");
             try {
                 MyIoTActionListener listener = new MyIoTActionListener(context, Constants.ActionStateStatus.DISCONNECTING);
                 iotClient.disconnectDevice(listener);
@@ -305,12 +306,11 @@ public class LoginPagerFragment extends IoTStarterPagerFragment {
         Log.d(TAG, ".handleActivate() exit");
     }
 
-    public BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
-        @Override
-        public synchronized void onReceive(Context context, Intent intent) {
-            System.out.println(intent.getStringExtra("bluetoothservice"));
-        }
-    };
+    public void quitMessageToActivity(String message){
+        intentBluetooth = new Intent("QuitService");
+        intentBluetooth.putExtra("quitMessage", message);
+        this.getActivity().sendBroadcast(intentBluetooth);
+    }
 
 
     /**

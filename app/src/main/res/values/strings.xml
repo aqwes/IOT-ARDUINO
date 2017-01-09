@@ -47,8 +47,8 @@
     <string name="showToken_button">Show Auth Token</string>
     <string name="hideToken_button">Hide Auth Token</string>
     <string name="useSSL_button">Use SSL</string>
-    <string name="activate_button">Activate Sensor</string>
-    <string name="deactivate_button">Deactivate Sensor</string>
+    <string name="activate_button">Connect</string>
+    <string name="deactivate_button">Disconnect</string>
 
     <string name="device_id">DeviceID: -</string>
     <string name="is_connected">Connected to IoT: No</string>

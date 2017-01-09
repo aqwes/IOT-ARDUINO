@@ -20,7 +20,6 @@ import android.app.AlertDialog;
 import android.content.*;
 import android.content.res.Resources;
 import android.os.Bundle;
-import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -65,6 +64,7 @@ public class IoTPagerFragment extends IoTStarterPagerFragment {
     Instance single_window;
 
 
+
     private Context mainContext;
     private IoTStarterApplication app;
 
@@ -80,6 +80,7 @@ public class IoTPagerFragment extends IoTStarterPagerFragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         view = inflater.inflate(R.layout.iot, container, false);
         text1 = (TextView) view.findViewById(R.id.textView);
+
         return view;
     }
 
@@ -125,6 +126,8 @@ public class IoTPagerFragment extends IoTStarterPagerFragment {
 
         try {
             getActivity().getApplicationContext().unregisterReceiver(broadcastReceiver);
+            getActivity().getApplicationContext().unregisterReceiver(mMessageReceiver);
+
         } catch (IllegalArgumentException iae) {
             // Do nothing
         }
