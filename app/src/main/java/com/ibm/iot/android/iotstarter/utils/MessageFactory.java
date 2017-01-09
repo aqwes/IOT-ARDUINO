@@ -28,16 +28,8 @@ import java.util.TimeZone;
 public class MessageFactory {
 
     public static String getAccelMessage(String movement) {
-        DateFormat isoDateTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
-
-        String isoTimestamp = isoDateTimeFormat.format(new Date());
-        if (!isoTimestamp.endsWith("Z")) {
-            int pos = isoTimestamp.length() - 2;
-            isoTimestamp = isoTimestamp.substring(0, pos) + ':' + isoTimestamp.substring(pos);
-        }
         return "{ \"d\": {" +
-                "\"movement \":\"" + movement + "\" " +
-                "\"timestamp\":\"" + isoTimestamp + "\" " +
+                "\"movement\":\"" + movement + "\" " +
                 "} }";
     }
 }

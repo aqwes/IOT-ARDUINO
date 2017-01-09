@@ -397,24 +397,24 @@ public class IoTPagerFragment extends IoTStarterPagerFragment {
     public BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
         @Override
         public synchronized void onReceive(Context context, Intent intent) {
-/*            String [] data = intent.getParcelableExtra("bluetoothservice");
+            String [] data = intent.getStringArrayExtra("bluetoothMessage");
             try {
-                createArray(data);
+                text1.setText(createArray(data));
             } catch (Exception e) {
                 e.printStackTrace();
-            }*/
-            String  data2 = intent.getStringExtra("bluetoothMessage");
+            }
+ /*           String  data2 = intent.getStringExtra("bluetoothMessage");
             text1.setText(data2);
 
             try {
                 test(data2);
             } catch (Exception e) {
                 e.printStackTrace();
-            }
+            }*/
 
         }
     };
-    public void createArray(String[] data) throws Exception {
+    public String createArray(String[] data) throws Exception {
 
         for (int i = 1; i <= 180; i++) {
             testData[i] = Double.valueOf(data[i]);
@@ -460,22 +460,22 @@ public class IoTPagerFragment extends IoTStarterPagerFragment {
         String movement = "";
 
         if (pred2 == 0.0) {
-            movement = "Predicted UP";
+            movement = "UP";
         }
         if (pred2 == 1.0) {
-            movement = "Predicted DOWN";
+            movement = "DOWN";
         }
         if (pred2 == 2.0) {
-            movement = "Predicted LEFT";
+            movement = "LEFT";
         }
         if (pred2 == 3.0) {
-            movement = "PPredicted RIGHT";
+            movement = "RIGHT";
         }
         if (pred2 == 5.0) {
-            movement = "Predicted TILTLEFT";
+            movement = "TILT LEFT";
         }
         if (pred2 == 4.0) {
-            movement = "Predicted TILTRIGHT";
+            movement = "TILT RIGHT";
         }
 
         String messageData = MessageFactory.getAccelMessage(movement);
@@ -499,6 +499,7 @@ public class IoTPagerFragment extends IoTStarterPagerFragment {
         actionIntent.putExtra(Constants.INTENT_DATA, Constants.ACCEL_EVENT);
         mainContext.sendBroadcast(actionIntent);
 
+        return messageData;
     }
 
 

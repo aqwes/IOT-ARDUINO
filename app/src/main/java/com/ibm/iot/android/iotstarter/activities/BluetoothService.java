@@ -44,7 +44,6 @@ public class BluetoothService extends Service {
         recDataString = new StringBuilder();
         intent = new Intent("BluetoothService");
         getApplicationContext().registerReceiver(mMessageReceiver, new IntentFilter("QuitService"));
-        timer = new Timer();
         init();
 
     }
@@ -55,7 +54,6 @@ public class BluetoothService extends Service {
             String data = intent.getStringExtra("quitMessage");
             if(data.contains("quit")){
                 stopSelf();
-                timer.cancel();
             }
         }
     };
@@ -68,18 +66,20 @@ public class BluetoothService extends Service {
             Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
             if (pairedDevices.size() > 0) {
                 for (BluetoothDevice device : pairedDevices) {
-                    mDevice = device;
+                    if(device.toString().equals("20:16:09:08:22:16")){
+                        mDevice = device;
+                    }
                 }
             }
-
                 mConnectThread = new ConnectThread(mDevice);
                 mConnectThread.start();
-                //connect();
+                connect();
+
         }
-        startService();
+        //startService();
         }
 
-    private void startService() {
+/*    private void startService() {
         timer.scheduleAtFixedRate(new mainTask(), 0, 2000);
     }
 
@@ -93,21 +93,23 @@ public class BluetoothService extends Service {
                     "} }"));
             i++;
         }
-    }
+    }*/
 
 
-    public void sendMessageToActivity(String message){
+    public void sendMessageToActivity(String[] message){
         intent.putExtra("bluetoothMessage", message);
         sendBroadcast(intent);
     }
 
     private void connect() {
+
         bluetoothIn = new Handler() {
 
             public void handleMessage(android.os.Message msg) {
                 if (msg.what == Constants.handlerState) {
                     //if message is what we want
-                    String readMessage = (String) msg.obj;                              // msg.arg1 = bytes from connect thread
+                    String readMessage = (String) msg.obj;
+
 
                     recDataString.append(readMessage);                                  //keep appending to string until ~
                     int endOfLineIndex = recDataString.indexOf("~");                    // determine the end-of-line
@@ -119,10 +121,11 @@ public class BluetoothService extends Service {
                         if (recDataString.charAt(0) == '#')                             //if it starts with # we know it is what we are looking for
                         {
 
+
                             String[] data = recDataString.toString().split(",");       //Split data in array
 
                             try {
-                              //  sendMessageToActivity(data);
+                               sendMessageToActivity(data);
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
