@@ -30,13 +30,12 @@ import static java.lang.Thread.sleep;
 public class BluetoothService extends Service {
     private BluetoothAdapter mBluetoothAdapter;
     private BluetoothDevice mDevice;
-
-    private static Timer timer;
-
     private ConnectThread mConnectThread;
     private Handler bluetoothIn;
     private StringBuilder recDataString;
     private Intent intent;
+
+    private static final String deviceID = "20:16:09:08:22:16";
 
     @Override
     public void onCreate() {
@@ -45,7 +44,6 @@ public class BluetoothService extends Service {
         intent = new Intent("BluetoothService");
         getApplicationContext().registerReceiver(mMessageReceiver, new IntentFilter("QuitService"));
         init();
-
     }
 
     public BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
@@ -66,7 +64,7 @@ public class BluetoothService extends Service {
             Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
             if (pairedDevices.size() > 0) {
                 for (BluetoothDevice device : pairedDevices) {
-                    if(device.toString().equals("20:16:09:08:22:16")){
+                    if(device.toString().equals(deviceID)){
                         mDevice = device;
                     }
                 }
@@ -74,27 +72,8 @@ public class BluetoothService extends Service {
                 mConnectThread = new ConnectThread(mDevice);
                 mConnectThread.start();
                 connect();
-
         }
-        //startService();
         }
-
-/*    private void startService() {
-        timer.scheduleAtFixedRate(new mainTask(), 0, 2000);
-    }
-
-    private class mainTask extends TimerTask {
-        private int i = 0;
-        public void run()
-        {
-
-            sendMessageToActivity("{ \"d\": {" +
-                    "\"movement\":\"" + String.valueOf(i + "\" " +
-                    "} }"));
-            i++;
-        }
-    }*/
-
 
     public void sendMessageToActivity(String[] message){
         intent.putExtra("bluetoothMessage", message);
@@ -102,28 +81,19 @@ public class BluetoothService extends Service {
     }
 
     private void connect() {
-
         bluetoothIn = new Handler() {
 
             public void handleMessage(android.os.Message msg) {
                 if (msg.what == Constants.handlerState) {
-                    //if message is what we want
                     String readMessage = (String) msg.obj;
-
 
                     recDataString.append(readMessage);                                  //keep appending to string until ~
                     int endOfLineIndex = recDataString.indexOf("~");                    // determine the end-of-line
 
                     if (endOfLineIndex > 0) {                                           // make sure there data before ~
-                       // String dataInPrint = recDataString.substring(0, endOfLineIndex);    // extract string
-                        //  System.out.print("Data Received = " + dataInPrint);
-
-                        if (recDataString.charAt(0) == '#')                             //if it starts with # we know it is what we are looking for
-                        {
-
+                        if (recDataString.charAt(0) == '#'){
 
                             String[] data = recDataString.toString().split(",");       //Split data in array
-
                             try {
                                sendMessageToActivity(data);
                             } catch (Exception e) {
@@ -142,12 +112,10 @@ public class BluetoothService extends Service {
     public IBinder onBind(Intent intent) {
         return null;
     }
-
     private class ConnectThread extends Thread {
         private ConnectedThread mConnectedThread;
         private BluetoothDevice mmDevice;
         private BluetoothSocket mmSocket;
-
 
         public ConnectThread(BluetoothDevice device) {
             BluetoothSocket tmp = null;
@@ -174,14 +142,6 @@ public class BluetoothService extends Service {
             }
             mConnectedThread = new ConnectedThread(mmSocket);
             mConnectedThread.start();
-        }
-
-        public void cancel() {
-            try {
-                mmSocket.close();
-            } catch (IOException e) {
-                System.out.print(e);
-            }
         }
     }
 
@@ -222,13 +182,6 @@ public class BluetoothService extends Service {
             try {
                 mmOutStream.write(bytes);
             } catch (IOException e) {
-            }
-        }
-        public void cancel() {
-            try {
-                mmSocket.close();
-            } catch (IOException e) {
-                System.out.print(e);
             }
         }
     }

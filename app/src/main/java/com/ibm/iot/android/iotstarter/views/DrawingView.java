@@ -15,22 +15,13 @@
 package com.ibm.iot.android.iotstarter.views;
 
 import android.content.Context;
-import android.content.Intent;
 import android.graphics.*;
 import android.util.AttributeSet;
 import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
 import com.ibm.iot.android.iotstarter.IoTStarterApplication;
-import com.ibm.iot.android.iotstarter.R;
-import com.ibm.iot.android.iotstarter.iot.IoTClient;
-import com.ibm.iot.android.iotstarter.utils.Constants;
-import com.ibm.iot.android.iotstarter.utils.MessageFactory;
-import com.ibm.iot.android.iotstarter.utils.MyIoTActionListener;
-import org.eclipse.paho.client.mqttv3.MqttException;
 
-import java.util.zip.Inflater;
+
 
 /**
  * View that contains canvas to draw upon, handles all touch Events for
@@ -63,7 +54,6 @@ public class DrawingView extends View {
      * Initializes canvas and drawing classes.
      */
     private void setupDrawing() {
-        //get drawing area setup for interaction
         drawPath = new Path();
         drawPaint = new Paint();
         drawPaint.setDither(true);
