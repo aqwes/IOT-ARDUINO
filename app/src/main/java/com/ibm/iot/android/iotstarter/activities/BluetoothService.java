@@ -9,6 +9,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.res.Resources;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
@@ -16,15 +17,31 @@ import android.support.annotation.Nullable;
 import android.support.v4.content.LocalBroadcastManager;
 
 
+import com.ibm.iot.android.iotstarter.R;
+import com.ibm.iot.android.iotstarter.iot.IoTClient;
 import com.ibm.iot.android.iotstarter.utils.Constants;
+import com.ibm.iot.android.iotstarter.utils.MyIoTActionListener;
 
+import org.eclipse.paho.client.mqttv3.MqttException;
+
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import weka.classifiers.Classifier;
+import weka.classifiers.trees.J48;
+import weka.core.Attribute;
+import weka.core.FastVector;
+import weka.core.Instance;
+import weka.core.Instances;
+import weka.core.SparseInstance;
+
+import static com.ibm.iot.android.iotstarter.utils.DefaultInstanceAttribute.getFormatDefaultInstanceAttribute;
 import static java.lang.Thread.sleep;
 
 public class BluetoothService extends Service {
@@ -36,6 +53,16 @@ public class BluetoothService extends Service {
     private Intent intent;
     private int count = 0;
     private String newline;
+    private Context mainContext;
+
+
+    //Weka
+    double[] testData = new double[180];
+    private FastVector instanceAttributes;
+    private Instances dataSet;
+
+    Classifier classifier;
+    Instance single_window;
 
     private String line;
 
@@ -47,7 +74,13 @@ public class BluetoothService extends Service {
         recDataString = new StringBuilder();
         intent = new Intent("BluetoothService");
         getApplicationContext().registerReceiver(mMessageReceiver, new IntentFilter("QuitService"));
-        newline = System.getProperty("line.separator");
+        mainContext = this.getApplicationContext();
+
+        try {
+            createClassifier();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         init();
     }
 
@@ -80,7 +113,7 @@ public class BluetoothService extends Service {
         }
         }
 
-    public void sendMessageToActivity(String[] message){
+    public void sendMessageToActivity(String message){
         intent.putExtra("bluetoothMessage", message);
         sendBroadcast(intent);
     }
@@ -90,17 +123,26 @@ public class BluetoothService extends Service {
 
             public void handleMessage(android.os.Message msg) {
                 if (msg.what == Constants.handlerState) {
+                    newline = System.getProperty("line.separator");
                     recDataString.append((String) msg.obj);
 
                             if (recDataString.toString().contains(newline)) {
-                                line += recDataString.toString().substring(2,recDataString.length());
+                                String temp = recDataString.toString();
+                                if(temp.contains("null")){
+                                   temp = temp.replace("null","");
+                                }
+                                if(temp.contains("h")){
+                                    temp = temp.replace("h,","");
+                                }
+
+                                line += temp;
                                 count++;
 
                                 if(count == 30) {
                                     line = line.substring(0,line.length()-1);
                                     String[] data = line.split(",");
                                     try {
-                                        sendMessageToActivity(data);
+                                        sendMessageToActivity(createArray(data));
                                     } catch (Exception e) {
                                         e.printStackTrace();
                                     }
@@ -113,6 +155,56 @@ public class BluetoothService extends Service {
                 }
             }
         };
+    }
+
+
+    //--------Train data-------------------------------------------------------------------------------
+    public void createClassifier() throws Exception {
+        Resources res = this.getResources();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(res.openRawResource(R.raw.trainset)));
+        Instances train = new Instances(reader);
+        reader.close();
+        train.setClassIndex(train.numAttributes() - 1);
+
+        classifier = new J48();
+        classifier.buildClassifier(train);
+
+        instanceAttributes = getFormatDefaultInstanceAttribute();
+        dataSet = new Instances("Relation: trainData", instanceAttributes, 0);
+        dataSet.setClassIndex(instanceAttributes.size() - 1);
+    }
+
+    public String createArray(String[] data) throws Exception {
+        single_window = new SparseInstance(dataSet.numAttributes());
+
+        for (int i = 0; i < 180; i++) {
+
+             if(data[i].equals("null")){
+                 data[i] = data[i].replace("null", data[i+6]);
+             }else if(data[i].contains("null")) {
+                 data[i] = data[i].replace("null", "");
+             }
+            testData[i] = Double.valueOf(data[i]);
+            single_window.setValue((Attribute) instanceAttributes.elementAt(i), testData[i]);
+        }
+
+        single_window.setMissing(180);
+
+        dataSet.add(single_window);
+        single_window.setDataset(dataSet);
+
+        String movement = "";
+
+        Instances labeled = new Instances(dataSet);
+
+
+        for (int i = 0; i < dataSet.numInstances(); i++) {
+
+            double pred = classifier.classifyInstance(dataSet.instance(i));
+            labeled.instance(i).setClassValue(pred);
+            movement = labeled.instance(i).classAttribute().value((int) pred);
+        }
+        return movement;
     }
 
     @Nullable

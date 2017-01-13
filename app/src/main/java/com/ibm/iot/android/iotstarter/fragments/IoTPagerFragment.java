@@ -51,16 +51,11 @@ public class IoTPagerFragment extends IoTStarterPagerFragment {
     private final static String TAG = IoTPagerFragment.class.getName();
     private View view;
     private TextView text1;
-    double[] testData = new double[180];
+
     private Context mainContext;
     private IoTStarterApplication app;
 
-    //Weka
-    private FastVector instanceAttributes;
-    private Instances dataSet;
 
-    Classifier classifier;
-    Instance single_window;
 
     /**************************************************************************
      * Fragment functions for establishing the fragment
@@ -75,13 +70,6 @@ public class IoTPagerFragment extends IoTStarterPagerFragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         view = inflater.inflate(R.layout.iot, container, false);
         text1 = (TextView) view.findViewById(R.id.textView);
-
-        try {
-            createClassifier();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
         return view;
     }
 
@@ -190,82 +178,41 @@ public class IoTPagerFragment extends IoTStarterPagerFragment {
     public BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
         @Override
         public synchronized void onReceive(Context context, Intent intent) {
-            String[] data = intent.getStringArrayExtra("bluetoothMessage");
+            String data = intent.getStringExtra("bluetoothMessage");
             try {
-                System.out.println("MESSAGE1");
-                text1.setText(createArray(data));
+                text1.setText(data);
+
+                String messageData = "{ \"d\": {" +
+                        "\"movement\":\"" + data + "\" " +
+                        "} }";
+
+                send(messageData);
             } catch (Exception e) {
                 System.err.print("ERROR");
 
             }
         }
     };
-
-    //--------Train data-------------------------------------------------------------------------------
-    public void createClassifier() throws Exception {
-        Resources res = this.getResources();
-        BufferedReader reader = new BufferedReader(new InputStreamReader(res.openRawResource(R.raw.trainset)));
-        Instances train = new Instances(reader);
-        reader.close();
-        train.setClassIndex(train.numAttributes() - 1);
-
-        classifier = new J48();
-        classifier.buildClassifier(train);
-
-        instanceAttributes = getFormatDefaultInstanceAttribute();
-        dataSet = new Instances("Relation: trainData", instanceAttributes, 0);
-        dataSet.setClassIndex(instanceAttributes.size() - 1);
-    }
-
-    public String createArray(String[] data) throws Exception {
-
-        System.out.println("movement");
-        single_window = new SparseInstance(dataSet.numAttributes());
-
-        for (int i = 0; i < 180; i++) {
-            testData[i] = Double.valueOf(data[i]);
-            single_window.setValue((Attribute) instanceAttributes.elementAt(i), testData[i]);
+public void send(String messageData) {
+    try {
+        MyIoTActionListener listener = new MyIoTActionListener(mainContext, Constants.ActionStateStatus.PUBLISH);
+        IoTClient iotClient = IoTClient.getInstance(mainContext);
+        if (app.getConnectionType() == Constants.ConnectionType.QUICKSTART) {
+            iotClient.publishEvent(Constants.STATUS_EVENT, "json", messageData, 0, false, listener);
+        } else {
+            iotClient.publishEvent(Constants.ACCEL_EVENT, "json", messageData, 0, false, listener);
         }
 
-        single_window.setMissing(180);
-
-        dataSet.add(single_window);
-        single_window.setDataset(dataSet);
-
-        String movement = "";
-
-        Instances labeled = new Instances(dataSet);
-
-
-        for (int i = 0; i < dataSet.numInstances(); i++) {
-
-            double pred = classifier.classifyInstance(dataSet.instance(i));
-            labeled.instance(i).setClassValue(pred);
-            movement = labeled.instance(i).classAttribute().value((int) pred);
-
-            String messageData = "{ \"d\": {" +
-                    "\"movement\":\"" + movement + "\" " +
-                    "} }";
-            try {
-                MyIoTActionListener listener = new MyIoTActionListener(mainContext, Constants.ActionStateStatus.PUBLISH);
-                IoTClient iotClient = IoTClient.getInstance(mainContext);
-                if (app.getConnectionType() == Constants.ConnectionType.QUICKSTART) {
-                    iotClient.publishEvent(Constants.STATUS_EVENT, "json", messageData, 0, false, listener);
-                } else {
-                    iotClient.publishEvent(Constants.ACCEL_EVENT, "json", messageData, 0, false, listener);
-                }
-
-                Intent actionIntent = new Intent(Constants.APP_ID + Constants.INTENT_IOT);
-                actionIntent.putExtra(Constants.INTENT_DATA, Constants.INTENT_DATA_PUBLISHED);
-                mainContext.sendBroadcast(actionIntent);
-            } catch (MqttException e) {
-                System.out.println(e);
-            }
-
-            Intent actionIntent = new Intent(Constants.APP_ID + Constants.INTENT_IOT);
-            actionIntent.putExtra(Constants.INTENT_DATA, Constants.ACCEL_EVENT);
-            mainContext.sendBroadcast(actionIntent);
-        }
-        return movement;
+        Intent actionIntent = new Intent(Constants.APP_ID + Constants.INTENT_IOT);
+        actionIntent.putExtra(Constants.INTENT_DATA, Constants.INTENT_DATA_PUBLISHED);
+        mainContext.sendBroadcast(actionIntent);
+    } catch (MqttException e) {
+        System.out.println(e);
     }
+
+    Intent actionIntent = new Intent(Constants.APP_ID + Constants.INTENT_IOT);
+    actionIntent.putExtra(Constants.INTENT_DATA, Constants.ACCEL_EVENT);
+    mainContext.sendBroadcast(actionIntent);
+
+}
 }
