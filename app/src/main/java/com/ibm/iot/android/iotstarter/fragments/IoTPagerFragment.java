@@ -34,6 +34,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 
 import weka.classifiers.Classifier;
+import weka.classifiers.functions.MultilayerPerceptron;
 import weka.classifiers.meta.FilteredClassifier;
 import weka.classifiers.trees.J48;
 import weka.core.*;
@@ -50,13 +51,11 @@ public class IoTPagerFragment extends IoTStarterPagerFragment {
     private final static String TAG = IoTPagerFragment.class.getName();
     private View view;
     private TextView text1;
-    double[] testData = new double[181];
+    double[] testData = new double[180];
     private Context mainContext;
     private IoTStarterApplication app;
 
-
     //Weka
-    private FilteredClassifier fc;
     private FastVector instanceAttributes;
     private Instances dataSet;
 
@@ -71,10 +70,18 @@ public class IoTPagerFragment extends IoTStarterPagerFragment {
         IoTPagerFragment i = new IoTPagerFragment();
         return i;
     }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         view = inflater.inflate(R.layout.iot, container, false);
         text1 = (TextView) view.findViewById(R.id.textView);
+
+        try {
+            createClassifier();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         return view;
     }
 
@@ -100,17 +107,11 @@ public class IoTPagerFragment extends IoTStarterPagerFragment {
                 }
             };
         }
-        mainContext = this.getContext();
         getActivity().getApplicationContext().registerReceiver(mMessageReceiver, new IntentFilter("BluetoothService"));
         getActivity().getApplicationContext().registerReceiver(broadcastReceiver,
                 new IntentFilter(Constants.APP_ID + Constants.INTENT_IOT));
-
+        mainContext = this.getContext();
         initializeIoTActivity();
-        try {
-            createClassifier();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
     /**
@@ -163,6 +164,7 @@ public class IoTPagerFragment extends IoTStarterPagerFragment {
 
     /**
      * Process the incoming intent broadcast.
+     *
      * @param intent The intent which was received by the fragment.
      */
     private void processIntent(Intent intent) {
@@ -173,7 +175,7 @@ public class IoTPagerFragment extends IoTStarterPagerFragment {
 
         String data = intent.getStringExtra(Constants.INTENT_DATA);
         assert data != null;
-     if (data.equals(Constants.ALERT_EVENT)) {
+        if (data.equals(Constants.ALERT_EVENT)) {
             String message = intent.getStringExtra(Constants.INTENT_DATA_MESSAGE);
             new AlertDialog.Builder(getActivity())
                     .setTitle(getResources().getString(R.string.alert_dialog_title))
@@ -188,11 +190,13 @@ public class IoTPagerFragment extends IoTStarterPagerFragment {
     public BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
         @Override
         public synchronized void onReceive(Context context, Intent intent) {
-            String [] data = intent.getStringArrayExtra("bluetoothMessage");
+            String[] data = intent.getStringArrayExtra("bluetoothMessage");
             try {
+                System.out.println("MESSAGE1");
                 text1.setText(createArray(data));
             } catch (Exception e) {
-                e.printStackTrace();
+                System.err.print("ERROR");
+
             }
         }
     };
@@ -200,18 +204,13 @@ public class IoTPagerFragment extends IoTStarterPagerFragment {
     //--------Train data-------------------------------------------------------------------------------
     public void createClassifier() throws Exception {
         Resources res = this.getResources();
-        BufferedReader reader2 = new BufferedReader(new InputStreamReader(res.openRawResource(R.raw.traindatatest)));
-        Instances traindata = new Instances(reader2);
-        reader2.close();
-        traindata.setClassIndex(traindata.numAttributes() - 1);
-        Instances train = traindata;
+        BufferedReader reader = new BufferedReader(new InputStreamReader(res.openRawResource(R.raw.trainset)));
+        Instances train = new Instances(reader);
+        reader.close();
+        train.setClassIndex(train.numAttributes() - 1);
 
-        Remove rm = new Remove();
         classifier = new J48();
-        fc = new FilteredClassifier();
-        fc.setFilter(rm);
-        fc.setClassifier(classifier);
-        fc.buildClassifier(train);
+        classifier.buildClassifier(train);
 
         instanceAttributes = getFormatDefaultInstanceAttribute();
         dataSet = new Instances("Relation: trainData", instanceAttributes, 0);
@@ -220,58 +219,53 @@ public class IoTPagerFragment extends IoTStarterPagerFragment {
 
     public String createArray(String[] data) throws Exception {
 
-        for (int i = 1; i <= 180; i++) {
-            testData[i] = Double.valueOf(data[i]);
-        }
-
+        System.out.println("movement");
         single_window = new SparseInstance(dataSet.numAttributes());
-        for (int i = 0; i < testData.length; i++) {
+
+        for (int i = 0; i < 180; i++) {
+            testData[i] = Double.valueOf(data[i]);
             single_window.setValue((Attribute) instanceAttributes.elementAt(i), testData[i]);
         }
-        single_window.setMissing(181);
+
+        single_window.setMissing(180);
 
         dataSet.add(single_window);
         single_window.setDataset(dataSet);
 
-        double pred2 = fc.classifyInstance(single_window);
         String movement = "";
 
-        if (pred2 == 0.0) {
-            movement = "UP";
-        } else if (pred2 == 1.0) {
-            movement = "DOWN";
-        } else if (pred2 == 2.0) {
-            movement = "LEFT";
-        } else if (pred2 == 3.0) {
-            movement = "RIGHT";
-        } else if (pred2 == 5.0) {
-            movement = "TILT LEFT";
-        } else if (pred2 == 4.0) {
-            movement = "TILT RIGHT";
-        }
+        Instances labeled = new Instances(dataSet);
 
-        String messageData = "{ \"d\": {" +
-                "\"movement\":\"" + movement + "\" " +
-                "} }";
-        try {
-            MyIoTActionListener listener = new MyIoTActionListener(mainContext, Constants.ActionStateStatus.PUBLISH);
-            IoTClient iotClient = IoTClient.getInstance(mainContext);
-            if (app.getConnectionType() == Constants.ConnectionType.QUICKSTART) {
-                iotClient.publishEvent(Constants.STATUS_EVENT, "json", messageData, 0, false, listener);
-            } else {
-                iotClient.publishEvent(Constants.ACCEL_EVENT, "json", messageData, 0, false, listener);
+
+        for (int i = 0; i < dataSet.numInstances(); i++) {
+
+            double pred = classifier.classifyInstance(dataSet.instance(i));
+            labeled.instance(i).setClassValue(pred);
+            movement = labeled.instance(i).classAttribute().value((int) pred);
+
+            String messageData = "{ \"d\": {" +
+                    "\"movement\":\"" + movement + "\" " +
+                    "} }";
+            try {
+                MyIoTActionListener listener = new MyIoTActionListener(mainContext, Constants.ActionStateStatus.PUBLISH);
+                IoTClient iotClient = IoTClient.getInstance(mainContext);
+                if (app.getConnectionType() == Constants.ConnectionType.QUICKSTART) {
+                    iotClient.publishEvent(Constants.STATUS_EVENT, "json", messageData, 0, false, listener);
+                } else {
+                    iotClient.publishEvent(Constants.ACCEL_EVENT, "json", messageData, 0, false, listener);
+                }
+
+                Intent actionIntent = new Intent(Constants.APP_ID + Constants.INTENT_IOT);
+                actionIntent.putExtra(Constants.INTENT_DATA, Constants.INTENT_DATA_PUBLISHED);
+                mainContext.sendBroadcast(actionIntent);
+            } catch (MqttException e) {
+                System.out.println(e);
             }
 
             Intent actionIntent = new Intent(Constants.APP_ID + Constants.INTENT_IOT);
-            actionIntent.putExtra(Constants.INTENT_DATA, Constants.INTENT_DATA_PUBLISHED);
+            actionIntent.putExtra(Constants.INTENT_DATA, Constants.ACCEL_EVENT);
             mainContext.sendBroadcast(actionIntent);
-        } catch (MqttException e) {
         }
-
-        Intent actionIntent = new Intent(Constants.APP_ID + Constants.INTENT_IOT);
-        actionIntent.putExtra(Constants.INTENT_DATA, Constants.ACCEL_EVENT);
-        mainContext.sendBroadcast(actionIntent);
-
         return movement;
     }
 }

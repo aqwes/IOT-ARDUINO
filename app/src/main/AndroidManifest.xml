@@ -78,5 +78,6 @@
 
         <service android:name=".activities.BluetoothService" />
 
+
     </application>
 </manifest>

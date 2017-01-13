@@ -34,6 +34,10 @@ public class BluetoothService extends Service {
     private Handler bluetoothIn;
     private StringBuilder recDataString;
     private Intent intent;
+    private int count = 0;
+    private String newline;
+
+    private String line;
 
     private static final String deviceID = "20:16:09:08:22:16";
 
@@ -43,6 +47,7 @@ public class BluetoothService extends Service {
         recDataString = new StringBuilder();
         intent = new Intent("BluetoothService");
         getApplicationContext().registerReceiver(mMessageReceiver, new IntentFilter("QuitService"));
+        newline = System.getProperty("line.separator");
         init();
     }
 
@@ -85,23 +90,26 @@ public class BluetoothService extends Service {
 
             public void handleMessage(android.os.Message msg) {
                 if (msg.what == Constants.handlerState) {
-                    String readMessage = (String) msg.obj;
+                    recDataString.append((String) msg.obj);
 
-                    recDataString.append(readMessage);                                  //keep appending to string until ~
-                    int endOfLineIndex = recDataString.indexOf("~");                    // determine the end-of-line
+                            if (recDataString.toString().contains(newline)) {
+                                line += recDataString.toString().substring(2,recDataString.length());
+                                count++;
 
-                    if (endOfLineIndex > 0) {                                           // make sure there data before ~
-                        if (recDataString.charAt(0) == '#'){
-
-                            String[] data = recDataString.toString().split(",");       //Split data in array
-                            try {
-                               sendMessageToActivity(data);
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
+                                if(count == 30) {
+                                    line = line.substring(0,line.length()-1);
+                                    String[] data = line.split(",");
+                                    try {
+                                        sendMessageToActivity(data);
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
+                                    }
+                                    count=0;
+                                    line ="";
+                                }
+                                recDataString.setLength(0);
                         }
-                        recDataString.delete(0, recDataString.length());                    //clear all string data
-                    }
+
                 }
             }
         };
