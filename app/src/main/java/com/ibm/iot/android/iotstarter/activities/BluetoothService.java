@@ -25,22 +25,29 @@ import com.ibm.iot.android.iotstarter.utils.MyIoTActionListener;
 import org.eclipse.paho.client.mqttv3.MqttException;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
 import java.io.OutputStream;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import weka.classifiers.Classifier;
-import weka.classifiers.trees.J48;
+import weka.classifiers.functions.MultilayerPerceptron;
 import weka.core.Attribute;
 import weka.core.FastVector;
 import weka.core.Instance;
 import weka.core.Instances;
 import weka.core.SparseInstance;
 
+//import static com.google.android.gms.internal.a.R;
+import static com.google.android.gms.internal.a.C;
+import static com.ibm.iot.android.iotstarter.R.layout.main;
+import static com.ibm.iot.android.iotstarter.R.raw.trainset;
+import static com.ibm.iot.android.iotstarter.R.raw.multilayerperceptron;
 import static com.ibm.iot.android.iotstarter.utils.DefaultInstanceAttribute.getFormatDefaultInstanceAttribute;
 import static java.lang.Thread.sleep;
 
@@ -61,7 +68,7 @@ public class BluetoothService extends Service {
     private FastVector instanceAttributes;
     private Instances dataSet;
 
-    Classifier classifier;
+    MultilayerPerceptron classifier;
     Instance single_window;
 
     private String line;
@@ -161,13 +168,17 @@ public class BluetoothService extends Service {
     //--------Train data-------------------------------------------------------------------------------
     public void createClassifier() throws Exception {
         Resources res = this.getResources();
-        BufferedReader reader = new BufferedReader(new InputStreamReader(res.openRawResource(R.raw.trainset)));
+        BufferedReader reader = new BufferedReader(new InputStreamReader(res.openRawResource(trainset)));
         Instances train = new Instances(reader);
         reader.close();
         train.setClassIndex(train.numAttributes() - 1);
 
-        classifier = new J48();
-        classifier.buildClassifier(train);
+        try {
+            classifier = (MultilayerPerceptron) new ObjectInputStream(res.openRawResource(multilayerperceptron)).readObject();
+
+        } catch (Error e) {
+            System.out.println("PROBLEM ATT SKAPA CLASSIFIER: " + e);
+        }
 
         instanceAttributes = getFormatDefaultInstanceAttribute();
         dataSet = new Instances("Relation: trainData", instanceAttributes, 0);
