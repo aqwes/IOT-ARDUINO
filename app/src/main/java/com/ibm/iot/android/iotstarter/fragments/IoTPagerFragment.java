@@ -30,18 +30,6 @@ import com.ibm.iot.android.iotstarter.utils.*;
 import com.ibm.iot.android.iotstarter.views.DrawingView;
 import org.eclipse.paho.client.mqttv3.MqttException;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-
-import weka.classifiers.Classifier;
-import weka.classifiers.functions.MultilayerPerceptron;
-import weka.classifiers.meta.FilteredClassifier;
-import weka.classifiers.trees.J48;
-import weka.core.*;
-import weka.filters.unsupervised.attribute.Remove;
-
-import static com.ibm.iot.android.iotstarter.utils.DefaultInstanceAttribute.getFormatDefaultInstanceAttribute;
-
 /**
  * The IoT Fragment is the main fragment of the application that will be displayed while the device is connected
  * to IoT. From this fragment, users can send text event messages. Users can also see the number

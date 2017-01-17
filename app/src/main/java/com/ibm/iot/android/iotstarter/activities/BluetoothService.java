@@ -14,27 +14,16 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
-import android.support.v4.content.LocalBroadcastManager;
 
-
-import com.ibm.iot.android.iotstarter.R;
-import com.ibm.iot.android.iotstarter.iot.IoTClient;
 import com.ibm.iot.android.iotstarter.utils.Constants;
-import com.ibm.iot.android.iotstarter.utils.MyIoTActionListener;
-
-import org.eclipse.paho.client.mqttv3.MqttException;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.OutputStream;
 import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
 
 import weka.classifiers.functions.MultilayerPerceptron;
 import weka.core.Attribute;
@@ -43,13 +32,9 @@ import weka.core.Instance;
 import weka.core.Instances;
 import weka.core.SparseInstance;
 
-//import static com.google.android.gms.internal.a.R;
-import static com.google.android.gms.internal.a.C;
-import static com.ibm.iot.android.iotstarter.R.layout.main;
 import static com.ibm.iot.android.iotstarter.R.raw.trainset;
 import static com.ibm.iot.android.iotstarter.R.raw.multilayerperceptron;
 import static com.ibm.iot.android.iotstarter.utils.DefaultInstanceAttribute.getFormatDefaultInstanceAttribute;
-import static java.lang.Thread.sleep;
 
 public class BluetoothService extends Service {
     private BluetoothAdapter mBluetoothAdapter;
@@ -73,7 +58,7 @@ public class BluetoothService extends Service {
 
     private String line;
 
-    private static final String deviceID = "20:16:09:08:22:16";
+    private static final String DEVICE_ID = "20:16:09:08:22:16";
 
     @Override
     public void onCreate() {
@@ -109,7 +94,7 @@ public class BluetoothService extends Service {
             Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
             if (pairedDevices.size() > 0) {
                 for (BluetoothDevice device : pairedDevices) {
-                    if(device.toString().equals(deviceID)){
+                    if(device.toString().equals(DEVICE_ID)){
                         mDevice = device;
                     }
                 }
